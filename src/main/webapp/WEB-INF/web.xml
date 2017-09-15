@@ -5,3 +5,13 @@
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
 </web-app>
+
+<!--<servlet>
+    <servlet-name>RequestServlet</servlet-name>
+    <servlet-class>dev.koin.request.RequestServlet</servlet-class>
+</servlet>
+
+<servlet-mapping>
+    <servlet-name>RequestServlet</servlet-name>
+    <url-pattern>/request</url-pattern>
+</servlet-mapping>-->
