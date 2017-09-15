@@ -91,6 +91,8 @@ public class RequestService {
         return flag;
     }
     
+//    //samplecommentsformac//
+    
     public boolean checkIfValidAddress(String address) {
         if(WalletUtils.isValidAddress(address)) {
             return true;
