@@ -29,19 +29,19 @@ import org.web3j.utils.Convert;
  *
  * @author Terrapin
  */
-public class Transaction {
+public class TransactionService {
 
     Web3j web3 = Web3j.build(new HttpService());
     Credentials credentials;
 
-    public Transaction() {
+    public TransactionService() {
         try {
             this.credentials = WalletUtils.loadCredentials("test", "src/main/resources/UTC--2017-09-05T23-58-08.153000000Z--0146e80a7f3fee9c789a779fac835bda983ea2c8.json");
 //            this.credentials = WalletUtils.loadCredentials("test", "/Users/akargarm/Documents/NetBeans_Projects/koin/src/main/resources/UTC--2017-09-05T23-58-08.153000000Z--0146e80a7f3fee9c789a779fac835bda983ea2c8.json");
         } catch (IOException ex) {
-            Logger.getLogger(Transaction.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(TransactionService.class.getName()).log(Level.SEVERE, null, ex);
         } catch (CipherException ex) {
-            Logger.getLogger(Transaction.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(TransactionService.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 

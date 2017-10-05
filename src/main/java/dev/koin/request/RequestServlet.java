@@ -5,19 +5,35 @@
  */
 package dev.koin.request;
 
+//import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
+import java.nio.file.Paths;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
+import org.web3j.abi.datatypes.generated.Uint256;
+import org.web3j.protocol.exceptions.TransactionTimeoutException;
 
 /**
  *
  * @author akargarm
  */
 @WebServlet(name = "RequestServlet", urlPatterns = {"/RequestServlet"})
+@MultipartConfig
 public class RequestServlet extends HttpServlet {
 
     /**
@@ -72,31 +88,21 @@ public class RequestServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        System.out.println("In the servlet");
-        String walletAddress = request.getParameter("address");
-        String password = request.getParameter("password");
+        
         RequestService req = new RequestService();
-        boolean connectSuccess = req.connectToEthereumWallet(walletAddress, password);
-//        boolean connectSuccess = req.connectToEthereumWallet(walletAddress, password);
-        if (connectSuccess == true) {
-            System.out.println("It works");
-            String symbol = "It works";
-            request.setAttribute("symbol", symbol);
-            request.getRequestDispatcher("index.jsp").forward(request, response);
-//            String symbol = req.getKoinSymbol();
-//            request.setAttribute("symbol", symbol);
-//            request.getRequestDispatcher("index.jsp").forward(request, response);
-        }
-        else {
-            String symbol = "Failed";
-            request.setAttribute("symbol", symbol);
-            request.getRequestDispatcher("index.jsp").forward(request, response);
-            response.sendRedirect("index.jsp");
-//            String symbol = "It failed";
-//            request.setAttribute("symbol", symbol);
-//            request.getRequestDispatcher("index.jsp").forward(request, response);
-//            System.out.println("Failed");
-        }
+
+        //User input from HTML form
+        String koin = request.getParameter("koin");
+        BigDecimal koinBigDecimal = new BigDecimal(koin);
+        Part privateKey = request.getPart("key");
+        String password = request.getParameter("password");
+        
+        //Defining parameters for addFileToKeystore function
+        String path = "src/main/resources";
+        String fileName = req.getFileName(privateKey);
+        PrintWriter writer = response.getWriter();
+        
+        req.addFileToKeystore(writer, path, fileName, privateKey);
     }
 
     /**
