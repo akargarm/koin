@@ -34,10 +34,9 @@ import org.web3j.crypto.WalletUtils;
 import org.web3j.protocol.*;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.core.methods.response.Web3ClientVersion;
-import org.web3j.protocol.exceptions.TransactionTimeoutException;
+//import org.web3j.protocol.exceptions.TransactionTimeoutException;
 import org.web3j.protocol.http.HttpService;
-import org.web3j.protocol.parity.Parity;
-import org.web3j.protocol.parity.methods.response.PersonalUnlockAccount;
+import org.web3j.tx.Contract;
 import org.web3j.tx.Transfer;
 import org.web3j.utils.Convert;
 
@@ -55,15 +54,15 @@ public class RequestService {
 
     public RequestService() {
         try {
-            this.credentials = WalletUtils.loadCredentials("test", "src/main/resources/UTC--2017-09-05T23-58-08.153000000Z--0146e80a7f3fee9c789a779fac835bda983ea2c8.json");
+    this.credentials = WalletUtils.loadCredentials("test", "src/main/resources/UTC--2017-09-05T23-58-08.153000000Z--0146e80a7f3fee9c789a779fac835bda983ea2c8.json");
         } catch (IOException ex) {
             Logger.getLogger(RequestService.class.getName()).log(Level.SEVERE, null, ex);
         } catch (CipherException ex) {
             Logger.getLogger(RequestService.class.getName()).log(Level.SEVERE, null, ex);
         }
         this.koinToken = KoinToken_sol_KoinToken.load("0x13B507B9554B231eBFdAF7B99Af96890D4b58A53",
-                web3, credentials, BigInteger.ZERO, BigInteger.ZERO);
-        
+                web3, credentials, Contract.GAS_PRICE, Contract.GAS_LIMIT);
+
 //        try {
 //            this.credentials = WalletUtils.loadCredentials("test", "src/main/resources/UTC--2017-09-05T23-58-08.153000000Z--0146e80a7f3fee9c789a779fac835bda983ea2c8.json");
 //        } catch (IOException ex) {
@@ -85,20 +84,32 @@ public class RequestService {
         }
     }
 
+//    public String getKoinSymbol() {
+//        String symbolAsString = null;
+//        try {
+////            KoinToken_sol_KoinToken koinToken = KoinToken_sol_KoinToken.load("0x13B507B9554B231eBFdAF7B99Af96890D4b58A53",
+////                    web3, credentials, BigInteger.ZERO, BigInteger.ZERO);
+//            Utf8String symbol = koinToken.symbol().get();
+//            symbolAsString = symbol.getValue();
+////            return symbolAsString;
+//        } catch (InterruptedException ex) {
+//            Logger.getLogger(TransactionService.class.getName()).log(Level.SEVERE, null, ex);
+//        } catch (ExecutionException ex) {
+//            Logger.getLogger(TransactionService.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//        return symbolAsString;
+//    }
+    
     public String getKoinSymbol() {
-        String symbolAsString = null;
+        String symbol = null;
         try {
-//            KoinToken_sol_KoinToken koinToken = KoinToken_sol_KoinToken.load("0x13B507B9554B231eBFdAF7B99Af96890D4b58A53",
-//                    web3, credentials, BigInteger.ZERO, BigInteger.ZERO);
-            Utf8String symbol = koinToken.symbol().get();
-            symbolAsString = symbol.getValue();
-//            return symbolAsString;
+            symbol = koinToken.symbol().sendAsync().get();
         } catch (InterruptedException ex) {
-            Logger.getLogger(TransactionService.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(RequestService.class.getName()).log(Level.SEVERE, null, ex);
         } catch (ExecutionException ex) {
-            Logger.getLogger(TransactionService.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(RequestService.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return symbolAsString;
+        return symbol;
     }
 
     public boolean createWalletFile(String password) {
@@ -114,7 +125,7 @@ public class RequestService {
         }
         return false;
     }
-    
+
     public String getFileName(Part part) {
         String partHeader = part.getHeader("content-disposition");
 //        LOGGER.log(Level.INFO, "Part Header = {0}", partHeader);
@@ -173,7 +184,7 @@ public class RequestService {
             }
         }
     }
-    
+
     public Credentials connectToEthereumWallet(String password, String pathToWalletFile, String walletFileName) {
         try {
             this.credentials = WalletUtils.loadCredentials(password, pathToWalletFile + "/" + walletFileName);
@@ -186,23 +197,110 @@ public class RequestService {
         }
         return credentials;
     }
+
+//    public Uint256 getBalance(String address) {
+//        Uint256 balance = null;
+//        try {
+////            balance = koinToken.balanceOf(new Address(address)).get();
+//            balance = koinToken.balanceOf(address);
+//        } catch (InterruptedException ex) {
+//            Logger.getLogger(RequestService.class.getName()).log(Level.SEVERE, null, ex);
+//        } catch (ExecutionException ex) {
+//            Logger.getLogger(RequestService.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+////        Uint256 balance = koinToken.balanceOf(address);
+//        return balance;
+//    }
     
-    public Uint256 getBalance(String address) {
-        Uint256 balance = null;
+    public BigInteger getBalance(Credentials credentials) {
+        BigInteger balance = null;
         try {
-            balance = koinToken.balanceOf(new Address(address)).get();
-        } catch (InterruptedException ex) {
-            Logger.getLogger(RequestService.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ExecutionException ex) {
+            balance = koinToken.balanceOf(credentials.getAddress()).sendAsync().get();
+        } catch (Exception ex) {
             Logger.getLogger(RequestService.class.getName()).log(Level.SEVERE, null, ex);
         }
-//        Uint256 balance = koinToken.balanceOf(address);
         return balance;
     }
-    
-    public boolean transferKoin(BigDecimal koin) {
-        String userAddress = credentials.getAddress();
-        koinToken.transferFrom(new Address("0x0146e80a7f3fee9c789a779fac835bda983ea2c8"), new Address(userAddress), new Uint256(koin.toBigInteger()));
+
+//    public boolean transferKoin(BigDecimal koin) {
+//        String userAddress = credentials.getAddress();
+//        System.out.println("User address is " + userAddress + " requesting " + koin.toString() + " koin");
+//        Address srcAddress = new Address("0x0146e80a7f3fee9c789a779fac835bda983ea2c8");
+//        Address toAddress = new Address(userAddress);
+//
+//        //        koinToken.transferFrom(new Address("0x0146e80a7f3fee9c789a779fac835bda983ea2c8"), new Address(userAddress), new Uint256(koin.toBigInteger()));
+//        koinToken.transferFrom(srcAddress, toAddress, new Uint256(koin.toBigInteger()));
+//        return true;
+//    }
+    public boolean transferKoin(BigInteger koin, Credentials recipientCred) {
+        try {
+//            System.out.println(recipientCred.getAddress().toString());
+            this.credentials = WalletUtils.loadCredentials("test", "src/main/resources/UTC--2017-09-05T23-58-08.153000000Z--0146e80a7f3fee9c789a779fac835bda983ea2c8.json");
+            System.out.println("I'm here");
+        } catch (Exception e) {
+            System.err.println("Caked");
+        }
+        try {
+            //        String srcAddressString = credentials.getAddress();
+//        Address srcAddress = new Address(srcAddressString);
+//        this.credentials = connectToEthereumWallet(password, pathToWalletFile, walletFileName);
+//        String toAddressString = credentials.getAddress(); 
+//        Address toAddress = new Address(toAddressString);
+//        Uint256 value = new Uint256(koin.toBigInteger());
+//        koinToken.transferFrom(srcAddressString, toAddressString, koin.toBigInteger());
+//            BigInteger value = koin.toBigInteger();
+//            System.out.println(value.toString());
+            TransactionReceipt koinReceipt;
+            this.getBalance(credentials);
+            koinReceipt = koinToken._transfer(recipientCred.getAddress(), koin).sendAsync().get();
+        } catch (Exception e) {
+            System.err.println("Still caked");
+        }
         return true;
+    }
+    
+    public boolean koinSupplySufficient(BigInteger koin, Credentials recipientCred) {
+        boolean flag = false;
+        try {
+            this.credentials = WalletUtils.loadCredentials("test", "src/main/resources/UTC--2017-09-05T23-58-08.153000000Z--0146e80a7f3fee9c789a779fac835bda983ea2c8.json");
+            if(this.getBalance(credentials).compareTo(koin) >= 0) {
+                System.out.println("Sufficient koin funds");
+                flag = true;
+            }
+            else {
+                flag = false;
+            }
+        } catch (Exception e) {
+            System.err.println("Failed");
+        }
+        finally {
+            return flag;
+        }
+    }
+    
+    public boolean transferEther(String password, String path, String walletFile) {
+        boolean flag = false;
+        try {
+            TransactionReceipt transactionReceipt;
+            System.out.println("Present Project Directory : " + System.getProperty("user.dir"));
+            transactionReceipt = Transfer.sendFunds(web3, credentials, "0x0146e80a7f3fee9c789a779fac835bda983ea2c8", BigDecimal.valueOf(0.2), Convert.Unit.ETHER).sendAsync().get();
+            System.out.println("Funds transfer completed: " + transactionReceipt.getBlockHash());
+            flag = true;
+        } catch (Exception e) {
+            System.err.println("Failure");
+            flag = false;
+        }
+//        if (flag == true) {
+//            transferKoin(password, path, walletFile, BigDecimal.valueOf(1000));
+//        }
+        return flag;
+    }
+        
+    public Web3j getWeb3() {
+        return this.web3;
+    }
+    
+    public Credentials getCredentials() {
+        return this.credentials;
     }
 }

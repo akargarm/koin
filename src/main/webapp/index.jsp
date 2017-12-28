@@ -12,13 +12,27 @@
         <div class="container">
             <div class="row">
                 <div class="col-xs-12 col-xs-offset-2">
-                    <h3>Ether/KOIN Exchange</h3>
-                    <form class="form-horizontal" id="transfer" action="RequestServlet" method="post" enctype="multipart/form-data">
+                    <h3>Register for KOIN!</h3>
+                    <form class="form-horizontal" id="transfer" action="RegisterServlet" method="post" enctype="multipart/form-data">
                         <div class="form-group">
-                            <label for="koin" class="col-sm-2 control-label">KOIN</label>
+                            <label for="fName" class="col-sm-2 control-label">First name</label>
                             <div class="col-sm-3 input-group">
                                 <span class="input-group-addon glyphicon glyphicon-bitcoin"></span>
-                                <input class="form-control" id="koin" type="number" step="any" name="koin" required placeholder="Enter KOIN"><br>
+                                <input class="form-control" id="fName" type="text" name="fName" required placeholder="Enter first name"><br>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="lName" class="col-sm-2 control-label">Last name</label>
+                            <div class="col-sm-3 input-group">
+                                <span class="input-group-addon glyphicon glyphicon-bitcoin"></span>
+                                <input class="form-control" id="lName" type="text" name="lName" required placeholder="Enter last name"><br>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="username" class="col-sm-2 control-label">Username</label>
+                            <div class="col-sm-3 input-group">
+                                <span class="input-group-addon glyphicon glyphicon-bitcoin"></span>
+                                <input class="form-control" id="username" type="text" name="username" required placeholder="Enter username"><br>
                             </div>
                         </div>
                         <div class="form-group">

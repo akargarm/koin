@@ -6,6 +6,8 @@
 package dev.koin.request;
 
 //import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
+import dev.koin.register.RegisterService;
+import dev.koin.transaction.TransactionService;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -15,9 +17,18 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.servlet.AsyncContext;
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
@@ -26,14 +37,17 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 import org.web3j.abi.datatypes.generated.Uint256;
-import org.web3j.protocol.exceptions.TransactionTimeoutException;
+import org.web3j.crypto.CipherException;
+import org.web3j.crypto.Credentials;
+import org.web3j.crypto.WalletUtils;
+import org.web3j.protocol.Web3j;
+//import org.web3j.protocol.exceptions.TransactionTimeoutException;
 
 /**
  *
  * @author akargarm
  */
 @WebServlet(name = "RequestServlet", urlPatterns = {"/RequestServlet"})
-@MultipartConfig
 public class RequestServlet extends HttpServlet {
 
     /**
@@ -88,23 +102,78 @@ public class RequestServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
         RequestService req = new RequestService();
-
+        TransactionService transaction = new TransactionService();
+        
         //User input from HTML form
+        String username = request.getParameter("username");
         String koin = request.getParameter("koin");
-        BigDecimal koinBigDecimal = new BigDecimal(koin);
-        Part privateKey = request.getPart("key");
+        BigInteger koinBigInteger = new BigInteger(koin);
+//        Part privateKey = request.getPart("key");
         String password = request.getParameter("password");
         
-        //Defining parameters for addFileToKeystore function
-        String path = "src/main/resources";
-        String fileName = req.getFileName(privateKey);
-        PrintWriter writer = response.getWriter();
+//        BigDecimal etherToExchange = new BigDecimal(koinBigInteger.divide(BigInteger.valueOf(50000)));
+        BigDecimal bigIntegerToBigDecimal = new BigDecimal(koinBigInteger);
+        BigDecimal conversionRate = BigDecimal.valueOf(50000);
         
-        req.addFileToKeystore(writer, path, fileName, privateKey);
+        BigDecimal etherToExchange = bigIntegerToBigDecimal.divide(conversionRate);
+        
+        System.out.println(koinBigInteger.toString());
+        System.out.println(etherToExchange.toString());
+        
+        Connection con = RegisterService.connectToDB();
+        //Defining parameters for addFileToKeystore function
+//        String path = "src/main/resources";
+        ResultSet rs = RegisterService.findUser(con, req, username);
+//        String fileName = req.getFileName(privateKey);
+//        PrintWriter writer = response.getWriter();
+        
+        
+        
+//        req.addFileToKeystore(writer, path, fileName, privateKey);
+        Credentials credentials = null;
+        try {
+//            if (rs.next()) {
+                System.out.println("HEREEE");
+                
+//                credentials = WalletUtils.loadCredentials(password, "src/main/resources/" + rs.getString(6));
+//                System.out.println(credentials.getAddress());
+//            }
+//            if(rs.next()) {
+                rs.next();
+                credentials = req.connectToEthereumWallet(password, "src/main/resources/", rs.getString(6));
+//            }
+        } catch (SQLException ex) {
+            Logger.getLogger(RequestServlet.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        Web3j web3 = req.getWeb3();
+        System.out.println("Connected");
+        
+        boolean koinSupplySufficient = req.koinSupplySufficient(koinBigInteger, credentials);
+        boolean etherSupplySufficient = transaction.etherSupplySufficient(web3, credentials, etherToExchange);
+        
+        if(koinSupplySufficient == true && etherSupplySufficient == true) {
+            transaction.sendEther(web3, credentials, etherToExchange);
+            req.transferKoin(koinBigInteger, credentials);
+            System.out.println("KOIN transfer completed");
+        }
+        else if(koinSupplySufficient == false) {
+            System.out.println("Transfer failed...insufficient KOIN supply");
+        }
+        
+        else if(etherSupplySufficient == false) {
+            System.out.println("Transfer failed...insufficient Ether supply");
+        }
+        
+        RegisterService.closeConnection(con);
+        
+//        final AsyncContext ac = request.startAsync(request, response);
+//        ac.setTimeout(10 * 60 * 1000);
+//        
+//        final Executor watcherExecutor = Executors.newCachedThreadPool();
+//        watcherExecutor.execute(new AsyncProcessor(ac));
     }
-
+    
     /**
      * Returns a short description of the servlet.
      *
@@ -114,5 +183,5 @@ public class RequestServlet extends HttpServlet {
     public String getServletInfo() {
         return "Short description";
     }// </editor-fold>
-
+    
 }
